@@ -9,36 +9,28 @@ from styles import StyleManager
 from components import TaskItemWidget, LiveMonitorChart
 
 class SmartTaskManagerUI(QMainWindow):
-    """
-    Main Application Window.
-    """
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Smart Task Manager & System Monitor")
         self.resize(800, 600)
         
-        # Backend initialization
         self.data_manager = DataManager()
         self.system_monitor = SystemMonitor()
         self.dark_mode = True
         
-        # UI Setup
         self._init_ui()
         self._load_tasks_into_list()
         self._apply_style()
         
-        # Timer for live monitor
         self.timer = QTimer()
         self.timer.timeout.connect(self._update_system_metrics)
         self.timer.start(1000)
 
     def _init_ui(self):
-        """Initializes the layout and widgets."""
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         self.main_layout = QVBoxLayout(central_widget)
         
-        # Header
         header_layout = QHBoxLayout()
         self.title_label = QLabel("Smart Task Manager")
         self.title_label.setObjectName("titleLabel")
@@ -51,7 +43,6 @@ class SmartTaskManagerUI(QMainWindow):
         header_layout.addWidget(self.theme_btn)
         self.main_layout.addLayout(header_layout)
         
-        # Tabs
         self.tabs = QTabWidget()
         self.task_tab = QWidget()
         self.monitor_tab = QWidget()
@@ -64,10 +55,8 @@ class SmartTaskManagerUI(QMainWindow):
         self._setup_monitor_tab()
 
     def _setup_task_tab(self):
-        """Setup for the Task Management tab."""
         layout = QVBoxLayout(self.task_tab)
         
-        # Input Area
         input_frame = QFrame()
         input_frame.setObjectName("cardFrame")
         input_layout = QHBoxLayout(input_frame)
@@ -86,27 +75,22 @@ class SmartTaskManagerUI(QMainWindow):
         input_layout.addWidget(self.add_btn)
         layout.addWidget(input_frame)
         
-        # Task List
         self.task_list = QListWidget()
         layout.addWidget(self.task_list)
 
     def _setup_monitor_tab(self):
-        """Setup for the System Monitoring tab."""
         layout = QVBoxLayout(self.monitor_tab)
         
-        # Charts
         self.cpu_chart = LiveMonitorChart(title="CPU Usage (%)")
         self.ram_chart = LiveMonitorChart(title="RAM Usage (%)")
         
         layout.addWidget(self.cpu_chart)
         layout.addWidget(self.ram_chart)
         
-        # Metrics Label
         self.metrics_label = QLabel("Loading metrics...")
         layout.addWidget(self.metrics_label)
 
     def _add_task(self):
-        """Adds a new task to the list and storage."""
         title = self.task_input.text().strip()
         if not title:
             return
@@ -126,7 +110,6 @@ class SmartTaskManagerUI(QMainWindow):
         self.task_input.clear()
 
     def _add_task_widget(self, task):
-        """Creates and adds a widget for a task."""
         item = QListWidgetItem(self.task_list)
         widget = TaskItemWidget(task['id'], task['title'], task['priority'], task['completed'])
         
@@ -138,19 +121,16 @@ class SmartTaskManagerUI(QMainWindow):
         self.task_list.setItemWidget(item, widget)
 
     def _load_tasks_into_list(self):
-        """Loads tasks from storage into the UI."""
         self.task_list.clear()
         tasks = self.data_manager.load_tasks()
         for task in tasks:
             self._add_task_widget(task)
 
     def _delete_task(self, task_id):
-        """Deletes a task from storage and UI."""
         self.data_manager.delete_task(task_id)
         self._load_tasks_into_list()
 
     def _toggle_task_status(self, task_id, completed):
-        """Updates the completion status of a task."""
         tasks = self.data_manager.load_tasks()
         for task in tasks:
             if task['id'] == task_id:
@@ -160,18 +140,15 @@ class SmartTaskManagerUI(QMainWindow):
         self._load_tasks_into_list()
 
     def _toggle_theme(self):
-        """Switches between Dark and Light modes."""
         self.dark_mode = not self.dark_mode
         self._apply_style()
         self.cpu_chart.set_theme(self.dark_mode)
         self.ram_chart.set_theme(self.dark_mode)
 
     def _apply_style(self):
-        """Applies the current theme's style sheet."""
         self.setStyleSheet(StyleManager.get_style(self.dark_mode))
 
     def _update_system_metrics(self):
-        """Real-time update of system resource monitoring."""
         metrics = self.system_monitor.get_all_metrics()
         
         self.cpu_chart.update_data(metrics['cpu'])

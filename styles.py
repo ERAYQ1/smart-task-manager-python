@@ -1,8 +1,4 @@
 class StyleManager:
-    """
-    Centralized manager for Dark and Light mode QSS (Qt Style Sheets).
-    """
-
     DARK_STYLE = """
     QMainWindow {
         background-color: #121212;
@@ -115,5 +111,4 @@ class StyleManager:
 
     @classmethod
     def get_style(cls, dark_mode: bool = True) -> str:
-        """Returns the requested style sheet."""
         return cls.DARK_STYLE if dark_mode else cls.LIGHT_STYLE
