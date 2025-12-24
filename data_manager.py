@@ -1,6 +1,9 @@
 import json
 import os
+import logging
 from typing import List, Dict, Any
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class DataManager:
     def __init__(self, filename: str = "tasks.json"):
@@ -9,14 +12,20 @@ class DataManager:
 
     def _ensure_file_exists(self):
         if not os.path.exists(self.filename):
-            with open(self.filename, 'w', encoding='utf-8') as f:
-                json.dump([], f, ensure_ascii=False, indent=4)
+            try:
+                with open(self.filename, 'w', encoding='utf-8') as f:
+                    json.dump([], f, ensure_ascii=False, indent=4)
+            except Exception as e:
+                logging.error(f"Could not create data file: {e}")
 
     def load_tasks(self) -> List[Dict[str, Any]]:
+        if not os.path.exists(self.filename):
+            return []
         try:
             with open(self.filename, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
+        except (json.JSONDecodeError, FileNotFoundError) as e:
+            logging.warning(f"Error loading tasks, returning empty list: {e}")
             return []
 
     def save_tasks(self, tasks: List[Dict[str, Any]]):
@@ -24,7 +33,7 @@ class DataManager:
             with open(self.filename, 'w', encoding='utf-8') as f:
                 json.dump(tasks, f, ensure_ascii=False, indent=4)
         except Exception as e:
-            print(f"Error saving tasks: {e}")
+            logging.error(f"Error saving tasks: {e}")
 
     def add_task(self, task: Dict[str, Any]):
         tasks = self.load_tasks()
