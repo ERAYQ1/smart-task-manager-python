@@ -3,7 +3,7 @@ import sys
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QComboBox, 
                              QListWidget, QListWidgetItem, QTabWidget, QFrame,
-                             QSystemTrayIcon, QMenu, QApplication)
+                             QSystemTrayIcon, QMenu, QApplication, QStyle)
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtCore import QTimer, Qt
 from data_manager import DataManager
@@ -130,7 +130,7 @@ class SmartTaskManagerUI(QMainWindow):
 
     def _setup_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(self.style().standardIcon(QSystemTrayIcon.SP_ComputerIcon))
+        self.tray_icon.setIcon(self.style().standardIcon(QStyle.SP_ComputerIcon))
         
         tray_menu = QMenu()
         show_action = QAction("Show Window", self)
@@ -158,6 +158,7 @@ class SmartTaskManagerUI(QMainWindow):
         widget = TaskItemWidget(task['id'], task['title'], task['priority'], task['completed'], self.dark_mode)
         widget.deleted.connect(self._delete_task)
         widget.toggled.connect(self._toggle_task_status)
+        widget.edited.connect(self._edit_task)
         item.setSizeHint(widget.sizeHint())
         self.task_list.addItem(item)
         self.task_list.setItemWidget(item, widget)
@@ -185,6 +186,16 @@ class SmartTaskManagerUI(QMainWindow):
             widget = self.task_list.itemWidget(item)
             if widget and widget.task_id == task_id:
                 widget.update_state(completed, self.dark_mode)
+                break
+
+    def _edit_task(self, task_id, new_title):
+        self.data_manager.update_task({"id": task_id, "title": new_title})
+        # Update widget UI
+        for i in range(self.task_list.count()):
+            item = self.task_list.item(i)
+            widget = self.task_list.itemWidget(item)
+            if widget and widget.task_id == task_id:
+                widget.title_label.setText(new_title)
                 break
 
     def _toggle_theme(self):

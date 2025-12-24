@@ -49,6 +49,7 @@ class DataManager:
         tasks = self.load_tasks()
         for i, task in enumerate(tasks):
             if task.get('id') == updated_task.get('id'):
-                tasks[i] = updated_task
+                # Merge the dictionaries to preserve existing fields
+                tasks[i].update(updated_task)
                 break
         self.save_tasks(tasks)

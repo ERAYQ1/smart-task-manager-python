@@ -9,6 +9,7 @@ import numpy as np
 class TaskItemWidget(QFrame):
     deleted = Signal(str)
     toggled = Signal(str, bool)
+    edited = Signal(str, str)
 
     def __init__(self, task_id: str, title: str, priority: str, completed: bool, dark_mode: bool = True, parent=None):
         super().__init__(parent)
@@ -30,6 +31,10 @@ class TaskItemWidget(QFrame):
         title_layout.addWidget(self.title_label)
         title_layout.addWidget(self.priority_label)
         
+        self.edit_btn = QPushButton("✎")
+        self.edit_btn.setFixedSize(30, 30)
+        self.edit_btn.clicked.connect(self._on_edit)
+        
         self.delete_btn = QPushButton("✕")
         self.delete_btn.setObjectName("dangerButton")
         self.delete_btn.setFixedSize(30, 30)
@@ -38,8 +43,15 @@ class TaskItemWidget(QFrame):
         layout.addWidget(self.checkbox)
         layout.addLayout(title_layout)
         layout.addStretch()
+        layout.addWidget(self.edit_btn)
         layout.addWidget(self.delete_btn)
         self._apply_internal_styles(completed)
+
+    def _on_edit(self):
+        from PySide6.QtWidgets import QInputDialog
+        new_title, ok = QInputDialog.getText(self, "Edit Task", "Task Name:", text=self.title_label.text())
+        if ok and new_title.strip():
+            self.edited.emit(self.task_id, new_title.strip())
 
     def _apply_internal_styles(self, completed: bool):
         # Handle title style

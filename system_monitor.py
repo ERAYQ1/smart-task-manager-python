@@ -7,7 +7,7 @@ class SystemMonitor:
     def __init__(self):
         self.last_net_io = psutil.net_io_counters()
         self.last_time = time.time()
-        # Initialize CPU tracking to avoid 0.0 on first call
+        self._proc_cache = {}
         psutil.cpu_percent(interval=None)
 
     @staticmethod
@@ -59,18 +59,37 @@ class SystemMonitor:
         except Exception:
             return {"sent": 0.0, "recv": 0.0}
 
-    @staticmethod
-    def get_processes() -> List[Dict[str, Any]]:
+    def get_processes(self) -> List[Dict[str, Any]]:
         processes = []
+        current_pids = set()
         try:
-            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+            for proc in psutil.process_iter(['pid', 'name', 'memory_percent']):
                 try:
-                    pinfo = proc.info
-                    pinfo['cpu_percent'] = round(pinfo.get('cpu_percent', 0), 1)
-                    pinfo['memory_percent'] = round(pinfo.get('memory_percent', 0), 1)
+                    pid = proc.info['pid']
+                    current_pids.add(pid)
+                    
+                    if pid not in self._proc_cache:
+                        self._proc_cache[pid] = proc
+                    
+                    cached_proc = self._proc_cache[pid]
+                    # cpu_percent(interval=None) compares since last call on THIS object
+                    cpu = cached_proc.cpu_percent(interval=None)
+                    
+                    pinfo = {
+                        'name': proc.info['name'],
+                        'pid': pid,
+                        'cpu_percent': round(cpu, 1),
+                        'memory_percent': round(proc.info['memory_percent'], 1)
+                    }
                     processes.append(pinfo)
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
+            
+            # Cleanup cache
+            for pid in list(self._proc_cache.keys()):
+                if pid not in current_pids:
+                    del self._proc_cache[pid]
+
             return sorted(processes, key=lambda x: x['cpu_percent'], reverse=True)[:50]
         except Exception:
             return []
