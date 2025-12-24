@@ -1,111 +1,142 @@
 class StyleManager:
     DARK_STYLE = """
     QMainWindow {
-        background-color: #121212;
-        color: #E0E0E0;
+        background-color: #0F0F13;
+        color: #FFFFFF;
     }
     QWidget {
-        background-color: #1E1E1E;
-        color: #E0E0E0;
-        font-family: 'Segoe UI', sans-serif;
+        background-color: #16161E;
+        color: #A9B1D6;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    QTabWidget::pane {
+        border: 1px solid #24283B;
+        background: #1A1B26;
+        border-radius: 8px;
+    }
+    QTabBar::tab {
+        background: #1A1B26;
+        color: #787C99;
+        padding: 10px 20px;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        margin-right: 2px;
+    }
+    QTabBar::tab:selected {
+        background: #24283B;
+        color: #7AA2F7;
+        border-bottom: 2px solid #7AA2F7;
     }
     QPushButton {
-        background-color: #333333;
-        color: white;
-        border: 1px solid #444444;
-        padding: 8px 16px;
-        border-radius: 4px;
-        font-weight: bold;
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #7AA2F7, stop:1 #2AC3DE);
+        color: #1A1B26;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 11px;
     }
     QPushButton:hover {
-        background-color: #444444;
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #89B4FA, stop:1 #3BD1ED);
     }
     QPushButton#dangerButton {
-        background-color: #CF6679;
-        color: #000000;
+        background: #F7768E;
+        color: #1A1B26;
     }
     QPushButton#dangerButton:hover {
-        background-color: #D32F2F;
+        background: #FF8A9F;
     }
     QLineEdit, QComboBox, QTextEdit {
-        background-color: #2D2D2D;
-        border: 1px solid #444444;
-        padding: 6px;
-        color: white;
-        border-radius: 4px;
-    }
-    QLabel {
-        color: #E0E0E0;
-        font-size: 14px;
+        background-color: #24283B;
+        border: 1px solid #414868;
+        padding: 8px;
+        color: #C0CAF5;
+        border-radius: 6px;
     }
     QLabel#titleLabel {
-        font-size: 24px;
-        font-weight: bold;
-        color: #BB86FC;
+        font-size: 28px;
+        font-weight: 900;
+        color: #BB9AF7;
+        margin-bottom: 10px;
     }
     QListWidget {
-        background-color: #1E1E1E;
-        border: none;
+        background-color: #1A1B26;
+        border: 1px solid #24283B;
+        border-radius: 8px;
+        padding: 5px;
     }
     QFrame#cardFrame {
-        background-color: #2D2D2D;
-        border-radius: 8px;
-        border: 1px solid #333333;
+        background-color: #24283B;
+        border-radius: 10px;
+        border: 1px solid #414868;
+        padding: 5px;
+    }
+    QHeaderView::section {
+        background-color: #1A1B26;
+        color: #7AA2F7;
+        padding: 5px;
+        border: none;
+        font-weight: bold;
     }
     """
 
     LIGHT_STYLE = """
     QMainWindow {
-        background-color: #F5F5F5;
-        color: #212121;
+        background-color: #F0F2F5;
+        color: #1C1E21;
     }
     QWidget {
         background-color: #FFFFFF;
-        color: #212121;
-        font-family: 'Segoe UI', sans-serif;
+        color: #4B4F56;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    QTabWidget::pane {
+        border: 1px solid #DADDE1;
+        background: #FFFFFF;
+        border-radius: 8px;
+    }
+    QTabBar::tab {
+        background: #EBEDF0;
+        color: #606770;
+        padding: 10px 20px;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+    QTabBar::tab:selected {
+        background: #FFFFFF;
+        color: #1877F2;
+        border-bottom: 2px solid #1877F2;
     }
     QPushButton {
-        background-color: #E0E0E0;
-        color: #212121;
-        border: 1px solid #BDBDBD;
-        padding: 8px 16px;
-        border-radius: 4px;
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1877F2, stop:1 #21AFFD);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
         font-weight: bold;
-    }
-    QPushButton:hover {
-        background-color: #D5D5D5;
+        text-transform: uppercase;
+        font-size: 11px;
     }
     QPushButton#dangerButton {
-        background-color: #D32F2F;
-        color: white;
-    }
-    QPushButton#dangerButton:hover {
-        background-color: #B71C1C;
+        background: #FA3E3E;
     }
     QLineEdit, QComboBox, QTextEdit {
-        background-color: #FFFFFF;
-        border: 1px solid #BDBDBD;
-        padding: 6px;
-        color: #212121;
-        border-radius: 4px;
-    }
-    QLabel {
-        color: #212121;
-        font-size: 14px;
+        background-color: #F5F6F7;
+        border: 1px solid #CCD0D5;
+        padding: 8px;
+        color: #1C1E21;
+        border-radius: 6px;
     }
     QLabel#titleLabel {
-        font-size: 24px;
+        font-size: 28px;
         font-weight: bold;
-        color: #6200EE;
-    }
-    QListWidget {
-        background-color: #FFFFFF;
-        border: none;
+        color: #1877F2;
     }
     QFrame#cardFrame {
-        background-color: #F9F9F9;
-        border-radius: 8px;
-        border: 1px solid #E0E0E0;
+        background-color: #F0F2F5;
+        border-radius: 10px;
+        border: 1px solid #EBEDF0;
     }
     """
 
