@@ -130,13 +130,13 @@ class SmartTaskManagerUI(QMainWindow):
 
     def _setup_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(self.style().standardIcon(QSystemTrayIcon.MessageIcon))
+        self.tray_icon.setIcon(self.style().standardIcon(QSystemTrayIcon.SP_ComputerIcon))
         
         tray_menu = QMenu()
         show_action = QAction("Show Window", self)
         show_action.triggered.connect(self.showNormal)
         quit_action = QAction("Exit App", self)
-        quit_action.triggered.connect(QApplication.quit)
+        quit_action.triggered.connect(QApplication.instance().quit)
         
         tray_menu.addAction(show_action)
         tray_menu.addSeparator()
@@ -155,7 +155,7 @@ class SmartTaskManagerUI(QMainWindow):
 
     def _add_task_widget(self, task):
         item = QListWidgetItem(self.task_list)
-        widget = TaskItemWidget(task['id'], task['title'], task['priority'], task['completed'])
+        widget = TaskItemWidget(task['id'], task['title'], task['priority'], task['completed'], self.dark_mode)
         widget.deleted.connect(self._delete_task)
         widget.toggled.connect(self._toggle_task_status)
         item.setSizeHint(widget.sizeHint())
@@ -169,22 +169,38 @@ class SmartTaskManagerUI(QMainWindow):
 
     def _delete_task(self, task_id):
         self.data_manager.delete_task(task_id)
-        self._load_tasks_into_list()
+        # We still need to remove the item from the list
+        for i in range(self.task_list.count()):
+            item = self.task_list.item(i)
+            widget = self.task_list.itemWidget(item)
+            if widget and widget.task_id == task_id:
+                self.task_list.takeItem(i)
+                break
 
     def _toggle_task_status(self, task_id, completed):
-        tasks = self.data_manager.load_tasks()
-        for task in tasks:
-            if task['id'] == task_id:
-                task['completed'] = completed
-                self.data_manager.update_task(task)
+        self.data_manager.update_task({"id": task_id, "completed": completed})
+        # Update widget without reloading whole list
+        for i in range(self.task_list.count()):
+            item = self.task_list.item(i)
+            widget = self.task_list.itemWidget(item)
+            if widget and widget.task_id == task_id:
+                widget.update_state(completed, self.dark_mode)
                 break
-        self._load_tasks_into_list()
 
     def _toggle_theme(self):
         self.dark_mode = not self.dark_mode
         self._apply_style()
+        # Update charts
         for chart in [self.cpu_chart, self.ram_chart, self.net_up_chart, self.net_down_chart]:
             chart.set_theme(self.dark_mode)
+        # Update task widgets
+        tasks = {t['id']: t['completed'] for t in self.data_manager.load_tasks()}
+        for i in range(self.task_list.count()):
+            item = self.task_list.item(i)
+            widget = self.task_list.itemWidget(item)
+            if widget:
+                completed = tasks.get(widget.task_id, False)
+                widget.update_state(completed, self.dark_mode)
 
     def _apply_style(self):
         self.setStyleSheet(StyleManager.get_style(self.dark_mode))
