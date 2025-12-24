@@ -31,6 +31,7 @@ class SmartTaskManagerUI(QMainWindow):
         self._setup_tray()
         self._load_tasks_into_list()
         self._apply_style()
+        self._apply_shadow()
         
         # Default page
         self._switch_page(0)
@@ -191,8 +192,25 @@ class SmartTaskManagerUI(QMainWindow):
         
         self.stack.addWidget(page)
 
+    def _apply_shadow(self):
+        self.shadow = QGraphicsDropShadowEffect(self)
+        self.shadow.setBlurRadius(25)
+        self.shadow.setXOffset(0)
+        self.shadow.setYOffset(0)
+        self.shadow.setColor(QColor(0, 0, 0, 150))
+        self.main_container.setGraphicsEffect(self.shadow)
+
     def _switch_page(self, index):
+        # Premium Fade-in effect
+        self.fade_anim = QPropertyAnimation(self.stack, b"windowOpacity")
+        self.fade_anim.setDuration(300)
+        self.fade_anim.setStartValue(0.0)
+        self.fade_anim.setEndValue(1.0)
+        self.fade_anim.setEasingCurve(QEasingCurve.OutCubic)
+        
         self.stack.setCurrentIndex(index)
+        self.fade_anim.start()
+        
         for i, btn in enumerate(self.nav_btns):
             btn.setProperty("active", i == index)
             btn.setStyle(btn.style())
