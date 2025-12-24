@@ -1,41 +1,48 @@
 import uuid
+import sys
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QComboBox, 
-                             QListWidget, QListWidgetItem, QTabWidget, QFrame)
+                             QListWidget, QListWidgetItem, QTabWidget, QFrame,
+                             QSystemTrayIcon, QMenu)
+from PySide6.QtGui import QIcon, QAction
 from PySide6.QtCore import QTimer, Qt
 from data_manager import DataManager
 from system_monitor import SystemMonitor
 from styles import StyleManager
-from components import TaskItemWidget, LiveMonitorChart
+from components import TaskItemWidget, LiveMonitorChart, ProcessTable
 
 class SmartTaskManagerUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Smart Task Manager & System Monitor")
-        self.resize(800, 600)
+        self.setWindowTitle("Smart Task Manager Pro")
+        self.resize(1000, 700)
         
         self.data_manager = DataManager()
         self.system_monitor = SystemMonitor()
         self.dark_mode = True
         
         self._init_ui()
+        self._setup_tray()
         self._load_tasks_into_list()
         self._apply_style()
         
         self.timer = QTimer()
-        self.timer.timeout.connect(self._update_system_metrics)
+        self.timer.timeout.connect(self._update_all)
         self.timer.start(1000)
 
     def _init_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         self.main_layout = QVBoxLayout(central_widget)
+        self.main_layout.setContentsMargins(20, 20, 20, 20)
+        self.main_layout.setSpacing(15)
         
         header_layout = QHBoxLayout()
-        self.title_label = QLabel("Smart Task Manager")
+        self.title_label = QLabel("SYSTEM CONTROL")
         self.title_label.setObjectName("titleLabel")
         
-        self.theme_btn = QPushButton("Toggle Theme")
+        self.theme_btn = QPushButton("◑")
+        self.theme_btn.setFixedSize(40, 40)
         self.theme_btn.clicked.connect(self._toggle_theme)
         
         header_layout.addWidget(self.title_label)
@@ -44,30 +51,36 @@ class SmartTaskManagerUI(QMainWindow):
         self.main_layout.addLayout(header_layout)
         
         self.tabs = QTabWidget()
+        self.main_layout.addWidget(self.tabs)
+        
         self.task_tab = QWidget()
         self.monitor_tab = QWidget()
+        self.process_tab = QWidget()
         
-        self.tabs.addTab(self.task_tab, "Tasks")
-        self.tabs.addTab(self.monitor_tab, "System Monitor")
-        self.main_layout.addWidget(self.tabs)
+        self.tabs.addTab(self.task_tab, "TASKS")
+        self.tabs.addTab(self.monitor_tab, "MONITOR")
+        self.tabs.addTab(self.process_tab, "PROCESSES")
         
         self._setup_task_tab()
         self._setup_monitor_tab()
+        self._setup_process_tab()
 
     def _setup_task_tab(self):
         layout = QVBoxLayout(self.task_tab)
+        layout.setContentsMargins(15, 15, 15, 15)
         
         input_frame = QFrame()
         input_frame.setObjectName("cardFrame")
         input_layout = QHBoxLayout(input_frame)
         
         self.task_input = QLineEdit()
-        self.task_input.setPlaceholderText("Enter a new task...")
+        self.task_input.setPlaceholderText("Describe your next task...")
         
         self.priority_combo = QComboBox()
         self.priority_combo.addItems(["Low", "Medium", "High"])
+        self.priority_combo.setFixedWidth(120)
         
-        self.add_btn = QPushButton("Add Task")
+        self.add_btn = QPushButton("ADD")
         self.add_btn.clicked.connect(self._add_task)
         
         input_layout.addWidget(self.task_input)
@@ -80,50 +93,78 @@ class SmartTaskManagerUI(QMainWindow):
 
     def _setup_monitor_tab(self):
         layout = QVBoxLayout(self.monitor_tab)
+        layout.setContentsMargins(15, 15, 15, 15)
         
-        self.cpu_chart = LiveMonitorChart(title="CPU Usage (%)")
-        self.ram_chart = LiveMonitorChart(title="RAM Usage (%)")
+        charts_layout = QHBoxLayout()
+        self.cpu_chart = LiveMonitorChart(title="CPU LOAD (%)", color="#BB9AF7")
+        self.ram_chart = LiveMonitorChart(title="MEMORY USAGE (%)", color="#7AA2F7")
+        charts_layout.addWidget(self.cpu_chart)
+        charts_layout.addWidget(self.ram_chart)
+        layout.addLayout(charts_layout)
         
-        layout.addWidget(self.cpu_chart)
-        layout.addWidget(self.ram_chart)
+        net_layout = QHBoxLayout()
+        self.net_up_chart = LiveMonitorChart(title="NET UPLOAD (KB/s)", color="#F7768E")
+        self.net_down_chart = LiveMonitorChart(title="NET DOWNLOAD (KB/s)", color="#9ECE6A")
+        net_layout.addWidget(self.net_up_chart)
+        net_layout.addWidget(self.net_down_chart)
+        layout.addLayout(net_layout)
         
-        self.metrics_label = QLabel("Loading metrics...")
+        self.metrics_label = QLabel("Initializing metrics...")
+        self.metrics_label.setStyleSheet("font-family: 'Consolas'; font-size: 11px; color: #565F89;")
         layout.addWidget(self.metrics_label)
+
+    def _setup_process_tab(self):
+        layout = QVBoxLayout(self.process_tab)
+        layout.setContentsMargins(15, 15, 15, 15)
+        
+        self.proc_table = ProcessTable()
+        layout.addWidget(self.proc_table)
+        
+        btn_layout = QHBoxLayout()
+        self.refresh_btn = QPushButton("FORCE REFRESH")
+        self.refresh_btn.clicked.connect(self._update_processes)
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.refresh_btn)
+        layout.addLayout(btn_layout)
+
+    def _setup_tray(self):
+        self.tray_icon = QSystemTrayIcon(self)
+        # Using a dummy icon if one doesn't exist; ideally provide a .png
+        self.tray_icon.setIcon(self.style().standardIcon(QSystemTrayIcon.MessageIcon))
+        
+        tray_menu = QMenu()
+        show_action = QAction("Show Window", self)
+        show_action.triggered.connect(self.showNormal)
+        quit_action = QAction("Exit App", self)
+        quit_action.triggered.connect(sys.exit)
+        
+        tray_menu.addAction(show_action)
+        tray_menu.addSeparator()
+        tray_menu.addAction(quit_action)
+        
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.show()
 
     def _add_task(self):
         title = self.task_input.text().strip()
-        if not title:
-            return
-            
-        task_id = str(uuid.uuid4())
-        priority = self.priority_combo.currentText()
-        
-        task = {
-            "id": task_id,
-            "title": title,
-            "priority": priority,
-            "completed": False
-        }
-        
+        if not title: return
+        task = {"id": str(uuid.uuid4()), "title": title, "priority": self.priority_combo.currentText(), "completed": False}
         self.data_manager.add_task(task)
-        self._add_task_widget(task)
+        self._load_tasks_into_list()
         self.task_input.clear()
 
     def _add_task_widget(self, task):
         item = QListWidgetItem(self.task_list)
         widget = TaskItemWidget(task['id'], task['title'], task['priority'], task['completed'])
-        
         widget.deleted.connect(self._delete_task)
         widget.toggled.connect(self._toggle_task_status)
-        
         item.setSizeHint(widget.sizeHint())
         self.task_list.addItem(item)
         self.task_list.setItemWidget(item, widget)
 
     def _load_tasks_into_list(self):
         self.task_list.clear()
-        tasks = self.data_manager.load_tasks()
-        for task in tasks:
+        for task in self.data_manager.load_tasks():
             self._add_task_widget(task)
 
     def _delete_task(self, task_id):
@@ -142,19 +183,35 @@ class SmartTaskManagerUI(QMainWindow):
     def _toggle_theme(self):
         self.dark_mode = not self.dark_mode
         self._apply_style()
-        self.cpu_chart.set_theme(self.dark_mode)
-        self.ram_chart.set_theme(self.dark_mode)
+        for chart in [self.cpu_chart, self.ram_chart, self.net_up_chart, self.net_down_chart]:
+            chart.set_theme(self.dark_mode)
 
     def _apply_style(self):
         self.setStyleSheet(StyleManager.get_style(self.dark_mode))
 
+    def _update_all(self):
+        self._update_system_metrics()
+        if self.tabs.currentIndex() == 2:
+            self._update_processes()
+
     def _update_system_metrics(self):
         metrics = self.system_monitor.get_all_metrics()
-        
         self.cpu_chart.update_data(metrics['cpu'])
         self.ram_chart.update_data(metrics['memory']['percent'])
+        self.net_up_chart.update_data(metrics['network']['sent'], max_val=500)
+        self.net_down_chart.update_data(metrics['network']['recv'], max_val=500)
         
-        text = (f"CPU: {metrics['cpu']}% | "
-                f"RAM: {metrics['memory']['percent']}% ({metrics['memory']['available']}GB free) | "
-                f"Disk: {metrics['disk']['percent']}% ({metrics['disk']['used']}GB used)")
+        text = (f"CPU: {metrics['cpu']}% | RAM: {metrics['memory']['percent']}% | "
+                f"UP: {metrics['network']['sent']}KB/s | DOWN: {metrics['network']['recv']}KB/s")
         self.metrics_label.setText(text)
+
+    def _update_processes(self):
+        procs = self.system_monitor.get_processes()
+        self.proc_table.update_processes(procs)
+
+    def closeEvent(self, event):
+        if self.tray_icon.isVisible():
+            self.hide()
+            event.ignore()
+        else:
+            event.accept()
