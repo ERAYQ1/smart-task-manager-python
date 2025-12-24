@@ -7,6 +7,8 @@ class SystemMonitor:
     def __init__(self):
         self.last_net_io = psutil.net_io_counters()
         self.last_time = time.time()
+        # Initialize CPU tracking to avoid 0.0 on first call
+        psutil.cpu_percent(interval=None)
 
     @staticmethod
     def get_cpu_usage() -> float:
@@ -45,15 +47,15 @@ class SystemMonitor:
             current_net_io = psutil.net_io_counters()
             current_time = time.time()
             elapsed = current_time - self.last_time
-            if elapsed <= 0: elapsed = 0.1
+            if elapsed <= 0.001: elapsed = 0.001
             
-            sent_speed = (current_net_io.bytes_sent - self.last_net_io.bytes_sent) / elapsed / 1024 # KB/s
-            recv_speed = (current_net_io.bytes_recv - self.last_net_io.bytes_recv) / elapsed / 1024 # KB/s
+            sent_speed = (current_net_io.bytes_sent - self.last_net_io.bytes_sent) / elapsed / 1024
+            recv_speed = (current_net_io.bytes_recv - self.last_net_io.bytes_recv) / elapsed / 1024
             
             self.last_net_io = current_net_io
             self.last_time = current_time
             
-            return {"sent": round(sent_speed, 2), "recv": round(recv_speed, 2)}
+            return {"sent": round(sent_speed, 1), "recv": round(recv_speed, 1)}
         except Exception:
             return {"sent": 0.0, "recv": 0.0}
 
@@ -61,7 +63,7 @@ class SystemMonitor:
     def get_processes() -> List[Dict[str, Any]]:
         processes = []
         try:
-            for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 'memory_percent']):
+            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
                 try:
                     pinfo = proc.info
                     pinfo['cpu_percent'] = round(pinfo.get('cpu_percent', 0), 1)

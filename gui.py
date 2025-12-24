@@ -3,7 +3,7 @@ import sys
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QComboBox, 
                              QListWidget, QListWidgetItem, QTabWidget, QFrame,
-                             QSystemTrayIcon, QMenu)
+                             QSystemTrayIcon, QMenu, QApplication)
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtCore import QTimer, Qt
 from data_manager import DataManager
@@ -20,6 +20,7 @@ class SmartTaskManagerUI(QMainWindow):
         self.data_manager = DataManager()
         self.system_monitor = SystemMonitor()
         self.dark_mode = True
+        self.proc_update_counter = 0
         
         self._init_ui()
         self._setup_tray()
@@ -129,14 +130,13 @@ class SmartTaskManagerUI(QMainWindow):
 
     def _setup_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
-        # Using a dummy icon if one doesn't exist; ideally provide a .png
         self.tray_icon.setIcon(self.style().standardIcon(QSystemTrayIcon.MessageIcon))
         
         tray_menu = QMenu()
         show_action = QAction("Show Window", self)
         show_action.triggered.connect(self.showNormal)
         quit_action = QAction("Exit App", self)
-        quit_action.triggered.connect(sys.exit)
+        quit_action.triggered.connect(QApplication.quit)
         
         tray_menu.addAction(show_action)
         tray_menu.addSeparator()
@@ -191,8 +191,14 @@ class SmartTaskManagerUI(QMainWindow):
 
     def _update_all(self):
         self._update_system_metrics()
+        
         if self.tabs.currentIndex() == 2:
-            self._update_processes()
+            self.proc_update_counter += 1
+            if self.proc_update_counter >= 3:
+                self._update_processes()
+                self.proc_update_counter = 0
+        else:
+            self.proc_update_counter = 0
 
     def _update_system_metrics(self):
         metrics = self.system_monitor.get_all_metrics()
